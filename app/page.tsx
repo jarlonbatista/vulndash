@@ -9,11 +9,9 @@ export default function Home() {
   const [loading, setLoading] = useState(true)
   const [filtro, setFiltro] = useState('Todas')
   
-  // Estados de Login
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  // Estados do Formulário
   const [title, setTitle] = useState('')
   const [severity, setSeverity] = useState('Média')
   const [asset, setAsset] = useState('')
@@ -41,6 +39,22 @@ export default function Home() {
     
     if (!error) setVulnerabilities(data || [])
     setLoading(false)
+  }
+
+  // NOVA FUNÇÃO: EXCLUIR REGISTRO
+  async function handleDelete(id: string) {
+    if (!confirm("⚠️ ATENÇÃO: Deseja realmente remover este registro do SOC?")) return
+
+    const { error } = await supabase
+      .from('vulnerabilities')
+      .delete()
+      .eq('id', id)
+
+    if (error) {
+      alert("Erro ao excluir: " + error.message)
+    } else {
+      fetchVulnerabilities() // Atualiza a lista na hora
+    }
   }
 
   const listaFiltrada = vulnerabilities.filter(v => 
@@ -74,7 +88,6 @@ export default function Home() {
     }
   }
 
-  // TELA DE LOGIN
   if (!session) {
     return (
       <main style={{ backgroundColor: '#020617', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontFamily: 'sans-serif' }}>
@@ -89,14 +102,13 @@ export default function Home() {
     )
   }
 
-  // DASHBOARD PRINCIPAL
   return (
     <main style={{ backgroundColor: '#020617', minHeight: '100vh', color: '#f8fafc', fontFamily: 'sans-serif', padding: '2rem' }}>
       
       <header style={{ borderBottom: '1px solid #1e293b', paddingBottom: '1.5rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <h1 style={{ fontSize: '2rem', fontWeight: '900', color: '#3b82f6', margin: 0 }}>🛡️ VulnDash</h1>
-          <p style={{ color: '#64748b', fontSize: '0.8rem' }}>Monitoramento Ativo | Operador: {session.user.email}</p>
+          <p style={{ color: '#64748b', fontSize: '0.8rem' }}>Operador: {session.user.email}</p>
           
           <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
             {['Todas', 'Crítica', 'Alta', 'Média'].map(nivel => (
@@ -124,25 +136,42 @@ export default function Home() {
         </section>
 
         <section>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            {listaFiltrada.map((vuln) => (
-              <div key={vuln.id} style={{ 
-                backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid #1e293b',
-                borderLeft: `6px solid ${vuln.severity === 'Crítica' ? '#ef4444' : vuln.severity === 'Alta' ? '#f97316' : '#eab308'}`,
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '0.6rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' }}>
-                    {vuln.severity.toUpperCase()}
-                  </span>
+          {loading ? (
+            <p>Sincronizando banco de dados...</p>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+              {listaFiltrada.map((vuln) => (
+                <div key={vuln.id} style={{ 
+                  backgroundColor: '#0f172a', padding: '1.5rem', borderRadius: '16px', border: '1px solid #1e293b',
+                  borderLeft: `6px solid ${vuln.severity === 'Crítica' ? '#ef4444' : vuln.severity === 'Alta' ? '#f97316' : '#eab308'}`,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 'bold', padding: '2px 8px', borderRadius: '10px', backgroundColor: '#1e293b', color: '#f1f5f9', border: '1px solid #334155' }}>
+                        {vuln.severity.toUpperCase()}
+                      </span>
+                    </div>
+                    <h2 style={{ fontSize: '1.1rem', margin: '0 0 0.5rem 0', color: '#f1f5f9' }}>{vuln.title}</h2>
+                    <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.4' }}>{vuln.description}</p>
+                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #1e293b', fontSize: '0.7rem', color: '#475569' }}>
+                      Ativo: <span style={{ color: '#94a3b8' }}>{vuln.asset_name}</span>
+                    </div>
+                  </div>
+                  
+                  {/* BOTÃO DE EXCLUIR */}
+                  <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <button 
+                      onClick={() => handleDelete(vuln.id)}
+                      style={{ background: 'transparent', color: '#ef4444', border: 'none', cursor: 'pointer', fontSize: '0.65rem', textDecoration: 'underline', opacity: 0.7 }}
+                    >
+                      Remover Registro
+                    </button>
+                  </div>
                 </div>
-                <h2 style={{ fontSize: '1.1rem', margin: '0 0 0.5rem 0', color: '#f1f5f9' }}>{vuln.title}</h2>
-                <p style={{ fontSize: '0.85rem', color: '#94a3b8', lineHeight: '1.4' }}>{vuln.description}</p>
-                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #1e293b', fontSize: '0.7rem', color: '#475569' }}>
-                  Ativo: <span style={{ color: '#94a3b8' }}>{vuln.asset_name}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </div>
     </main>
