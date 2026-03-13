@@ -17,18 +17,44 @@ export default function Home() {
   const [client, setClient] = useState('')
   const [recommendation, setRecommendation] = useState('')
 
+// Adicione este useEffect para monitorar a sessão e carregar os dados
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => setSession(session))
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => setSession(session))
-    fetchVulnerabilities()
-    return () => subscription.unsubscribe()
-  }, [])
+    const getSessionAndData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      if (session) {
+        fetchVulnerabilities(); // Só busca se houver sessão
+      }
+    };
+
+    getSessionAndData();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) fetchVulnerabilities();
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   async function fetchVulnerabilities() {
-    setLoading(true)
-    const { data, error } = await supabase.from('vulnerabilities').select('*').order('created_at', { ascending: false })
-    if (!error) setVulnerabilities(data || [])
-    setLoading(false)
+    setLoading(true);
+    // Buscamos os dados garantindo que a sessão existe
+    const { data, error } = await supabase
+      .from('vulnerabilities')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error("Erro Supabase:", error.message);
+      // Se der erro de "JWT expired", tentamos deslogar o usuário
+      if (error.message.includes("JWT")) {
+        await supabase.auth.signOut();
+      }
+    } else {
+      setVulnerabilities(data || []);
+    }
+    setLoading(false);
   }
 
   async function handleSubmit(e: React.FormEvent) {
