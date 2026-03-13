@@ -8,60 +8,67 @@ export default function Home() {
   const [vulnerabilities, setVulnerabilities] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   
+  // Estados de Login
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
+  // Estados do Formulário e Edição
   const [editId, setEditId] = useState<string | null>(null)
   const [title, setTitle] = useState('')
   const [asset, setAsset] = useState('')
   const [client, setClient] = useState('')
   const [recommendation, setRecommendation] = useState('')
 
-// Adicione este useEffect para monitorar a sessão e carregar os dados
+  // Monitoramento de Sessão e Carregamento de Dados
   useEffect(() => {
     const getSessionAndData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setSession(session);
-      if (session) {
-        fetchVulnerabilities(); // Só busca se houver sessão
-      }
-    };
+      const { data: { session } } = await supabase.auth.getSession()
+      setSession(session)
+      if (session) fetchVulnerabilities()
+    }
 
-    getSessionAndData();
+    getSessionAndData()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) fetchVulnerabilities();
-    });
+      setSession(session)
+      if (session) fetchVulnerabilities()
+    })
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => subscription.unsubscribe()
+  }, [])
 
   async function fetchVulnerabilities() {
-    setLoading(true);
-    // Buscamos os dados garantindo que a sessão existe
+    setLoading(true)
     const { data, error } = await supabase
       .from('vulnerabilities')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
     
-    if (error) {
-      console.error("Erro Supabase:", error.message);
-      // Se der erro de "JWT expired", tentamos deslogar o usuário
-      if (error.message.includes("JWT")) {
-        await supabase.auth.signOut();
-      }
-    } else {
-      setVulnerabilities(data || []);
-    }
-    setLoading(false);
+    if (!error) setVulnerabilities(data || [])
+    setLoading(false)
   }
 
+  // FUNÇÃO DE EXCLUSÃO
+  async function handleDelete(id: string) {
+    if (!confirm("⚠️ Tem certeza que deseja remover este registro do SOC?")) return
+    const { error } = await supabase.from('vulnerabilities').delete().eq('id', id)
+    if (error) alert("Erro ao excluir: " + error.message)
+    else fetchVulnerabilities()
+  }
+
+  // FUNÇÃO DE SUBMISSÃO (SALVAR OU ATUALIZAR)
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!title || !client) return alert("Campos obrigatórios: Título e Cliente")
+    if (!title || !client) return alert("Campos obrigatórios: Cliente e Vulnerabilidade")
     
-    const payload = { title, asset_name: asset, client_name: client, recommendation, severity: 'Média', status: 'Pendente' }
+    const payload = { 
+      title, 
+      asset_name: asset, 
+      client_name: client, 
+      recommendation, 
+      severity: 'Média', 
+      status: 'Pendente' 
+    }
 
     if (editId) {
       const { error } = await supabase.from('vulnerabilities').update(payload).eq('id', editId)
@@ -87,7 +94,8 @@ export default function Home() {
     setEditId(null); setTitle(''); setAsset(''); setClient(''); setRecommendation('');
   }
 
-function handlePrint(vuln: any) {
+  // FUNÇÃO DE IMPRESSÃO PROFISSIONAL
+  function handlePrint(vuln: any) {
     const win = window.open('', '_blank')
     if (!win) return
     win.document.write(`
@@ -95,85 +103,34 @@ function handlePrint(vuln: any) {
         <head>
           <title>Relatório CTRL - ${vuln.client_name}</title>
           <style>
-            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
-            
-            /* CABEÇALHO COM LOGO */
-            .header { 
-              display: flex; 
-              justify-content: space-between; 
-              align-items: center; 
-              border-bottom: 3px solid #2563eb; 
-              padding-bottom: 20px; 
-              margin-bottom: 40px; 
-            }
-            .logo-container { display: flex; align-items: center; gap: 10px; }
-            .logo-icon { 
-              background: #2563eb; 
-              color: white; 
-              padding: 10px; 
-              border-radius: 8px; 
-              font-weight: 900; 
-              font-size: 1.2rem;
-            }
-            .logo-text { font-size: 1.5rem; fontWeight: 900; color: #1e293b; margin: 0; }
+            body { font-family: sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
+            .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 40px; }
+            .logo-text { font-size: 1.5rem; font-weight: 900; margin: 0; }
             .logo-text span { color: #2563eb; }
-
-            /* CONTEÚDO */
-            .meta-info { margin-bottom: 30px; font-size: 0.9rem; color: #64748b; }
-            .section-title { color: #2563eb; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 5px; }
             .content-box { background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
-            
-            /* DESTAQUE DA RECOMENDAÇÃO */
-            .recommendation-box { 
-              background: #f0fdf4; 
-              padding: 25px; 
-              border-radius: 12px; 
-              border-left: 6px solid #22c55e; 
-              margin-top: 30px; 
-            }
-            .recommendation-box h3 { color: #166534; margin-top: 0; display: flex; align-items: center; gap: 8px; }
-            
+            .recommendation-box { background: #f0fdf4; padding: 25px; border-radius: 12px; border-left: 6px solid #22c55e; margin-top: 30px; }
             footer { margin-top: 60px; font-size: 0.75rem; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px; }
           </style>
         </head>
         <body>
           <div class="header">
-            <div class="logo-container">
-              <div class="logo-icon">🛡️</div>
-              <h1 class="logo-text">CTRL <span>Segurança Digital</span></h1>
-            </div>
-            <div style="text-align: right; font-size: 0.8rem;">
-              <strong>RELATÓRIO TÉCNICO</strong><br/>
-              ID: #VULN-${vuln.id.substring(0,8).toUpperCase()}
-            </div>
+            <h1 class="logo-text">🛡️ CTRL <span>Segurança Digital</span></h1>
+            <div style="text-align: right; font-size: 0.8rem;">RELATÓRIO TÉCNICO SOC</div>
           </div>
-
-          <div class="meta-info">
-            <p><strong>CLIENTE:</strong> ${vuln.client_name}</p>
-            <p><strong>ATIVO MONITORADO:</strong> ${vuln.asset_name || 'Não especificado'}</p>
-            <p><strong>DATA DO REGISTRO:</strong> ${new Date(vuln.created_at).toLocaleDateString('pt-BR')}</p>
-          </div>
-
-          <div class="section-title">Vulnerabilidade Identificada</div>
+          <p><strong>CLIENTE:</strong> ${vuln.client_name}</p>
+          <p><strong>ATIVO:</strong> ${vuln.asset_name || 'N/A'}</p>
           <div class="content-box">
-            <h2 style="margin-top: 0; color: #1e293b;">${vuln.title}</h2>
-            <p style="color: #475569;">${vuln.description || 'Descrição detalhada sob análise.'}</p>
+            <h2>${vuln.title}</h2>
           </div>
-
           <div class="recommendation-box">
-            <h3>🛡️ Plano de Mitigação e Boas Práticas</h3>
-            <p style="color: #166534; font-size: 1rem;">${vuln.recommendation || 'Aguardando definição estratégica de mitigação.'}</p>
+            <h3>🛡️ Recomendação Técnica</h3>
+            <p>${vuln.recommendation || 'Pendente de análise.'}</p>
           </div>
-
-          <footer>
-            Este documento é confidencial e destinado exclusivamente ao cliente mencionado.<br/>
-            Gerado por <strong>VulnDash SOC</strong> - CTRL Segurança Digital.
-          </footer>
+          <footer>Gerado por VulnDash SOC - CTRL Segurança Digital</footer>
         </body>
       </html>
     `)
     win.document.close()
-    // Pequeno delay para garantir que o CSS carregue antes da caixa de impressão abrir
     setTimeout(() => { win.print() }, 500)
   }
 
@@ -182,11 +139,11 @@ function handlePrint(vuln: any) {
       <main style={{ backgroundColor: '#020617', minHeight: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontFamily: 'sans-serif' }}>
         <form onSubmit={async (e) => { e.preventDefault(); const {error} = await supabase.auth.signInWithPassword({email, password}); if(error) alert(error.message) }} 
               style={{ backgroundColor: '#0f172a', padding: '3.5rem', borderRadius: '24px', border: '1px solid #1e293b', width: '100%', maxWidth: '420px', textAlign: 'center', boxShadow: '0 0 60px rgba(59, 130, 246, 0.15)' }}>
-          <h1 style={{ color: '#3b82f6', marginBottom: '0.5rem', fontWeight: '900', fontSize: '2rem' }}>🛡️ VulnDash</h1>
-          <p style={{ color: '#64748b', fontSize: '0.75rem', marginBottom: '2.5rem', letterSpacing: '1px' }}>CTRL SEGURANÇA DIGITAL | SOC ACCESS</p>
-          <input type="email" placeholder="E-mail" onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '14px', marginBottom: '12px', borderRadius: '12px', border: '1px solid #334155', background: '#1e293b', color: 'white', outline: 'none' }} />
-          <input type="password" placeholder="Senha" onChange={e => setPassword(e.target.value)} style={{ width: '100%', padding: '14px', marginBottom: '25px', borderRadius: '12px', border: '1px solid #334155', background: '#1e293b', color: 'white', outline: 'none' }} />
-          <button type="submit" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: '#2563eb', color: 'white', fontWeight: 'bold', cursor: 'pointer', transition: '0.3s' }}>Entrar no Sistema</button>
+          <h1 style={{ color: '#3b82f6', marginBottom: '0.5rem', fontWeight: '900' }}>🛡️ VulnDash</h1>
+          <p style={{ color: '#64748b', fontSize: '0.75rem', marginBottom: '2.5rem' }}>CTRL SEGURANÇA DIGITAL | SOC ACCESS</p>
+          <input type="email" placeholder="E-mail" onChange={e => setEmail(e.target.value)} style={{ width: '100%', padding: '14px', marginBottom: '12px', borderRadius: '12px', border: '1px solid #334155', background: '#1e293b', color: 'white' }} />
+          <input type="password" placeholder="Senha" onChange={e => setPassword(e.target.value)} style={{ width: '100%', padding: '14px', marginBottom: '25px', borderRadius: '12px', border: '1px solid #334155', background: '#1e293b', color: 'white' }} />
+          <button type="submit" style={{ width: '100%', padding: '14px', borderRadius: '12px', border: 'none', background: '#2563eb', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}>Entrar no Sistema</button>
         </form>
       </main>
     )
@@ -195,59 +152,44 @@ function handlePrint(vuln: any) {
   return (
     <main style={{ backgroundColor: '#020617', minHeight: '100vh', color: '#f8fafc', padding: '2.5rem', fontFamily: 'sans-serif' }}>
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', borderBottom: '1px solid #1e293b', paddingBottom: '20px' }}>
-        <div>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#3b82f6', margin: 0 }}>🛡️ VulnDash SOC</h1>
-          <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '5px' }}>Monitoramento Ativo: <span style={{color: '#94a3b8'}}>{session.user.email}</span></p>
-        </div>
+        <h1 style={{ fontSize: '1.8rem', fontWeight: '900', color: '#3b82f6', margin: 0 }}>🛡️ VulnDash SOC</h1>
         <button onClick={() => supabase.auth.signOut()} style={{ background: 'transparent', color: '#ef4444', border: '1px solid #ef4444', padding: '10px 20px', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer' }}>Encerrar Sessão</button>
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 3fr', gap: '3rem' }}>
         {/* FORMULÁRIO */}
-        <section style={{ backgroundColor: '#0f172a', padding: '2rem', borderRadius: '20px', border: editId ? '2px solid #eab308' : '1px solid #1e293b', height: 'fit-content', boxShadow: editId ? '0 0 20px rgba(234, 179, 8, 0.1)' : 'none' }}>
-          <h3 style={{ color: editId ? '#eab308' : '#3b82f6', marginTop: 0, marginBottom: '1.5rem', fontSize: '1.2rem' }}>{editId ? '📝 Editar Registro' : '➕ Novo Registro'}</h3>
+        <section style={{ backgroundColor: '#0f172a', padding: '2rem', borderRadius: '20px', border: editId ? '2px solid #eab308' : '1px solid #1e293b', height: 'fit-content' }}>
+          <h3 style={{ color: editId ? '#eab308' : '#3b82f6', marginTop: 0, marginBottom: '1.5rem' }}>{editId ? '📝 Editar Registro' : '➕ Novo Registro'}</h3>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <label style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 'bold'}}>CLIENTE</label>
-            <input value={client} onChange={e => setClient(e.target.value)} placeholder="Ex: Farmácia Central" style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px' }} />
-            
-            <label style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 'bold'}}>TÍTULO</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Título da vulnerabilidade" style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px' }} />
-            
-            <label style={{fontSize: '0.7rem', color: '#64748b', fontWeight: 'bold'}}>ATIVO / HOST</label>
-            <input value={asset} onChange={e => setAsset(e.target.value)} placeholder="IP ou Nome do Equipamento" style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px' }} />
-            
-            <label style={{fontSize: '0.7rem', color: '#3b82f6', fontWeight: 'bold'}}>RECOMENDAÇÃO TÉCNICA</label>
-            <textarea value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder="Descreva as boas práticas para mitigação..." rows={6} style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #3b82f6', borderRadius: '8px', lineHeight: '1.5' }} />
-            
-            <button type="submit" style={{ marginTop: '10px', padding: '14px', background: editId ? '#eab308' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
-              {editId ? 'ATUALIZAR REGISTRO' : 'SALVAR NO SISTEMA'}
+            <input value={client} onChange={e => setClient(e.target.value)} placeholder="Nome do Cliente" style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px' }} />
+            <input value={title} onChange={e => setTitle(e.target.value)} placeholder="Vulnerabilidade" style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px' }} />
+            <input value={asset} onChange={e => setAsset(e.target.value)} placeholder="Ativo / IP" style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '8px' }} />
+            <textarea value={recommendation} onChange={e => setRecommendation(e.target.value)} placeholder="🛡️ Recomendação Técnica" rows={6} style={{ padding: '12px', background: '#1e293b', color: '#fff', border: '1px solid #3b82f6', borderRadius: '8px' }} />
+            <button type="submit" style={{ padding: '14px', background: editId ? '#eab308' : '#2563eb', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>
+              {editId ? 'ATUALIZAR' : 'SALVAR NO SOC'}
             </button>
-            {editId && <button onClick={clearForm} style={{ background: 'none', color: '#94a3b8', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>Cancelar edição</button>}
+            {editId && <button onClick={clearForm} style={{ background: 'none', color: '#94a3b8', border: 'none', cursor: 'pointer' }}>Cancelar</button>}
           </form>
         </section>
 
         {/* CARDS */}
         <section>
-          {loading ? <p style={{color: '#3b82f6'}}>Sincronizando com SOC...</p> : (
+          {loading ? <p style={{color: '#3b82f6'}}>Sincronizando...</p> : (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
               {vulnerabilities.map((v) => (
-                <div key={v.id} style={{ backgroundColor: '#0f172a', padding: '1.8rem', borderRadius: '20px', border: '1px solid #1e293b', borderLeft: '6px solid #3b82f6', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                      <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '1px' }}>{v.client_name}</span>
-                      <div style={{ display: 'flex', gap: '12px' }}>
-                        <button onClick={() => startEdit(v)} style={{ color: '#eab308', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>EDITAR</button>
-                        <button onClick={() => handlePrint(v)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>PDF</button>
-                      </div>
-                    </div>
-                    <h4 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#f1f5f9', lineHeight: '1.3' }}>{v.title}</h4>
-                    <div style={{ background: '#020617', padding: '12px', borderRadius: '12px', border: '1px solid #1e293b' }}>
-                      <p style={{ fontSize: '0.6rem', color: '#22c55e', margin: '0 0 6px 0', fontWeight: 'bold', letterSpacing: '1px' }}>SOLUÇÃO SUGERIDA:</p>
-                      <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0, lineHeight: '1.5' }}>{v.recommendation || 'Análise técnica em andamento...'}</p>
+                <div key={v.id} style={{ backgroundColor: '#0f172a', padding: '1.8rem', borderRadius: '20px', border: '1px solid #1e293b', borderLeft: '6px solid #3b82f6' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                    <span style={{ fontSize: '0.65rem', color: '#3b82f6', fontWeight: '900', textTransform: 'uppercase' }}>{v.client_name}</span>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <button onClick={() => startEdit(v)} style={{ color: '#eab308', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>EDITAR</button>
+                      <button onClick={() => handlePrint(v)} style={{ color: '#3b82f6', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}>PDF</button>
+                      <button onClick={() => handleDelete(v.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.7rem' }}>✕</button>
                     </div>
                   </div>
-                  <div style={{ marginTop: '1.5rem', fontSize: '0.7rem', color: '#475569', fontWeight: 'bold' }}>
-                    HOST: <span style={{color: '#64748b'}}>{v.asset_name || 'N/A'}</span>
+                  <h4 style={{ margin: '0 0 12px 0', fontSize: '1.1rem', color: '#f1f5f9' }}>{v.title}</h4>
+                  <div style={{ background: '#020617', padding: '12px', borderRadius: '12px', border: '1px solid #1e293b' }}>
+                    <p style={{ fontSize: '0.6rem', color: '#22c55e', margin: '0 0 6px 0', fontWeight: 'bold' }}>RECOMENDAÇÃO:</p>
+                    <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>{v.recommendation || 'Pendente...'}</p>
                   </div>
                 </div>
               ))}
