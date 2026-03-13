@@ -61,27 +61,94 @@ export default function Home() {
     setEditId(null); setTitle(''); setAsset(''); setClient(''); setRecommendation('');
   }
 
-  function handlePrint(vuln: any) {
+function handlePrint(vuln: any) {
     const win = window.open('', '_blank')
     if (!win) return
     win.document.write(`
       <html>
-        <head><title>Relatório CTRL</title></head>
-        <body style="font-family:sans-serif; padding:50px; color:#333;">
-          <h1 style="color:#2563eb; border-bottom: 2px solid #2563eb;">Relatório de Vulnerabilidade</h1>
-          <p><b>Cliente:</b> ${vuln.client_name}</p>
-          <p><b>Ativo:</b> ${vuln.asset_name}</p>
-          <hr/>
-          <h3>Descrição:</h3><p>${vuln.title}</p>
-          <div style="background:#f1f5f9; padding:20px; border-radius:10px; border-left:5px solid #22c55e;">
-            <h3>🛡️ Recomendação Técnica:</h3>
-            <p>${vuln.recommendation || 'Pendente de análise.'}</p>
+        <head>
+          <title>Relatório CTRL - ${vuln.client_name}</title>
+          <style>
+            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 50px; color: #1e293b; line-height: 1.6; }
+            
+            /* CABEÇALHO COM LOGO */
+            .header { 
+              display: flex; 
+              justify-content: space-between; 
+              align-items: center; 
+              border-bottom: 3px solid #2563eb; 
+              padding-bottom: 20px; 
+              margin-bottom: 40px; 
+            }
+            .logo-container { display: flex; align-items: center; gap: 10px; }
+            .logo-icon { 
+              background: #2563eb; 
+              color: white; 
+              padding: 10px; 
+              border-radius: 8px; 
+              font-weight: 900; 
+              font-size: 1.2rem;
+            }
+            .logo-text { font-size: 1.5rem; fontWeight: 900; color: #1e293b; margin: 0; }
+            .logo-text span { color: #2563eb; }
+
+            /* CONTEÚDO */
+            .meta-info { margin-bottom: 30px; font-size: 0.9rem; color: #64748b; }
+            .section-title { color: #2563eb; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; margin-bottom: 5px; }
+            .content-box { background: #f8fafc; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
+            
+            /* DESTAQUE DA RECOMENDAÇÃO */
+            .recommendation-box { 
+              background: #f0fdf4; 
+              padding: 25px; 
+              border-radius: 12px; 
+              border-left: 6px solid #22c55e; 
+              margin-top: 30px; 
+            }
+            .recommendation-box h3 { color: #166534; margin-top: 0; display: flex; align-items: center; gap: 8px; }
+            
+            footer { margin-top: 60px; font-size: 0.75rem; color: #94a3b8; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo-container">
+              <div class="logo-icon">🛡️</div>
+              <h1 class="logo-text">CTRL <span>Segurança Digital</span></h1>
+            </div>
+            <div style="text-align: right; font-size: 0.8rem;">
+              <strong>RELATÓRIO TÉCNICO</strong><br/>
+              ID: #VULN-${vuln.id.substring(0,8).toUpperCase()}
+            </div>
           </div>
+
+          <div class="meta-info">
+            <p><strong>CLIENTE:</strong> ${vuln.client_name}</p>
+            <p><strong>ATIVO MONITORADO:</strong> ${vuln.asset_name || 'Não especificado'}</p>
+            <p><strong>DATA DO REGISTRO:</strong> ${new Date(vuln.created_at).toLocaleDateString('pt-BR')}</p>
+          </div>
+
+          <div class="section-title">Vulnerabilidade Identificada</div>
+          <div class="content-box">
+            <h2 style="margin-top: 0; color: #1e293b;">${vuln.title}</h2>
+            <p style="color: #475569;">${vuln.description || 'Descrição detalhada sob análise.'}</p>
+          </div>
+
+          <div class="recommendation-box">
+            <h3>🛡️ Plano de Mitigação e Boas Práticas</h3>
+            <p style="color: #166534; font-size: 1rem;">${vuln.recommendation || 'Aguardando definição estratégica de mitigação.'}</p>
+          </div>
+
+          <footer>
+            Este documento é confidencial e destinado exclusivamente ao cliente mencionado.<br/>
+            Gerado por <strong>VulnDash SOC</strong> - CTRL Segurança Digital.
+          </footer>
         </body>
       </html>
     `)
     win.document.close()
-    win.print()
+    // Pequeno delay para garantir que o CSS carregue antes da caixa de impressão abrir
+    setTimeout(() => { win.print() }, 500)
   }
 
   if (!session) {
