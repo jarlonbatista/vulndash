@@ -1,36 +1,28 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🛡️ VulnDash | CTRL SOC
 
-## Getting Started
+**VulnDash** é uma plataforma avançada de monitoramento e gestão de vulnerabilidades (SOC Dashboard). Projetado para oferecer controle total sobre ocorrências técnicas, este sistema permite que analistas de segurança registrem, acompanhem e gerem relatórios profissionais de falhas encontradas em infraestruturas e ativos de clientes.
 
-First, run the development server:
+Esta ferramenta foi arquitetada visando a agilidade no dia a dia de operações de Blue Team, auditorias de segurança e consultorias corporativas.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Funcionalidades Principais
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+* **Autenticação Segura:** Controle de acesso restrito a analistas autorizados utilizando integração com a nuvem.
+* **Gestão de Vulnerabilidades:** CRUD completo (Criar, Ler, Atualizar, Deletar) de ocorrências técnicas detalhadas, vinculando cliente, ativo afetado e orientações técnicas de mitigação.
+* **Geração de Relatórios em PDF:** Exportação de relatórios profissionais e padronizados com um clique, garantindo sigilo e confidencialidade.
+* **Dashboard Estatístico:** Visão geral rápida da volumetria de vulnerabilidades cadastradas no sistema.
+* **Armazenamento em Nuvem:** Dados persistidos de forma segura e escalável utilizando estrutura NoSQL de alta disponibilidade.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🛠️ Tecnologias Utilizadas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+O projeto foi construído utilizando as melhores práticas do mercado de desenvolvimento web:
 
-## Learn More
+* **Frontend:** React.js / Next.js
+* **Backend & Autenticação (BaaS):** Firebase (Firestore & Authentication)
+* **Geração de Documentos:** jsPDF & html2canvas
+* **Interface:** Estilização estruturada com foco em UX/UI para profissionais de segurança (Dark Mode nativo).
 
-To learn more about Next.js, take a look at the following resources:
+## ⚙️ Como Executar o Projeto Localmente
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Clone o repositório:**
+   ```bash
+   git clone [https://github.com/SEU_USUARIO/vulndash.git](https://github.com/SEU_USUARIO/vulndash.git)
